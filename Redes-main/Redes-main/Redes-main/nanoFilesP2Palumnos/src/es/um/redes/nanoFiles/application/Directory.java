@@ -16,7 +16,6 @@ public class Directory {
 		 * value is used: -loss: probability of corruption of received datagrams
 		 */
 		String arg;
-
 		// Analizamos si hay parámetro
 		if (args.length > 0 && args[0].startsWith("-")) {
 			arg = args[0];

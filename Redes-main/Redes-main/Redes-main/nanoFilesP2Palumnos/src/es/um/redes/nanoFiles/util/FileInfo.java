@@ -26,6 +26,13 @@ public class FileInfo {
 		fileSize = size;
 		filePath = path;
 	}
+	// segundo constructor sin path
+	public FileInfo(String hash, String name, long size) {
+		fileHash = hash;
+		fileName = name;
+		fileSize = size;
+		filePath = null;
+	}
 	
 	// Irene -> He incluido estos getters para poder acceder desde dirmessage.
 	public String getFileHash() {

@@ -1,7 +1,13 @@
 package es.um.redes.nanoFiles.udp.message;
 
+import java.net.InetSocketAddress;
 import java.util.HashMap;
+//import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import es.um.redes.nanoFiles.util.FileInfo;
 
@@ -19,6 +25,7 @@ public class DirMessage {
 
 	private static final char DELIMITER = ':'; // Define el delimitador
 	private static final char END_LINE = '\n'; // Define el carácter de fin de línea
+	private static final String FIN_LISTA = "FIN_LISTA";
 
 	/**
 	 * Nombre del campo que define el tipo de mensaje (primera línea)
@@ -26,7 +33,6 @@ public class DirMessage {
 	private static final String FIELDNAME_OPERATION = "operation";
 	private static final String FIELDNAME_PROTOCOL = "protocol";
 	private static final String FIELDNAME_PORT = "port";
-	private static final String FIELDNAME_NFICHS = "n_fichs";
 	private static final String FIELDNAME_FICHNAME = "fich_name";
 	private static final String FIELDNAME_FICHHASH = "fich_hash";
 	private static final String FIELDNAME_FICHSIZE = "fich_size";
@@ -58,9 +64,9 @@ public class DirMessage {
 	private String protocolId;
 	private int serverPort;
 	private String fileName;
-	private FileInfo file;
 	private FileInfo[] files;
-	private LinkedList<Integer> servidores;
+	private HashMap<InetSocketAddress, FileInfo> servFich; // Para cada fichero, almacenamos su dir.IP + puerto.
+	// private LinkedList<Integer> servidores;
 
 	/*
 	 * TODO: (Boletín MensajesASCII) Crear diferentes constructores adecuados para
@@ -77,38 +83,14 @@ public class DirMessage {
 		this.serverPort = -1;
 		this.fileName = null;
 		this.files = null;
-		this.file = null;
-		this.servidores = new LinkedList<Integer>();
+		this.servFich = new HashMap<InetSocketAddress, FileInfo>();
 	}
 
-	// Constructor de availableFiles (filelistok -> availableFiles)
-	public DirMessage(String op, FileInfo[] files, LinkedList<Integer> servidores) {
-		this.operation = op;
-		this.protocolId = null;
-		this.serverPort = -1;
-		this.fileName = null;
-		this.files = files;
-		this.file = null;
-		this.servidores = servidores;
-	}
-
-	// Constructor de ask_infoMultipleOptions (downloadMO)
-	public DirMessage(String op, FileInfo[] file) {
-		this.operation = op;
-		this.protocolId = null;
-		this.serverPort = -1;
-		this.fileName = null;
-		this.files = file;
-		this.file = null;
-		this.servidores = new LinkedList<Integer>();
-		;
-	}
-
-	// Constructor para comandos con protocolo || nombre de fichero : ping, ask_info
+	// Constructor para comandos con protocolo y fileName -> ping, ask_info
 	public DirMessage(String op, String m) {
 		if (op == "ping") {
 			this.protocolId = m;
-			this.fileName = null;
+			this.fileName = null; // Optional<String> of ;
 		} else { // En el caso de que sea el comando : ask_info
 			this.protocolId = null;
 			this.fileName = m;
@@ -116,40 +98,32 @@ public class DirMessage {
 		this.operation = op;
 		this.serverPort = -1;
 		this.files = null;
-		this.file = null;
-		this.servidores = new LinkedList<Integer>();
+		this.servFich = new HashMap<InetSocketAddress, FileInfo>();
 	}
 
-	// Constructor para comandos con puerto : serve
-	public DirMessage(String op, int port) {
+	// Constructor de availableFiles, downloadok, ask_info_multipleoptions
+	public DirMessage(String op, HashMap<InetSocketAddress, FileInfo> servFich) {
+		this.operation = op;
+		this.protocolId = null;
+		this.serverPort = -1;
+		this.fileName = null;
+		this.files = null;
+		this.servFich = new HashMap<InetSocketAddress, FileInfo>(servFich);
+	}
+
+	// Constructor para comandos con puerto : serve || upload || update
+	public DirMessage(String op, int port, FileInfo[] files) {
 		this.operation = op;
 		this.protocolId = null;
 		this.serverPort = port;
 		this.fileName = null;
-		this.files = null;
-		this.file = null;
-		this.servidores = new LinkedList<Integer>();
-	}
-
-	// Constructor para comandos con puerto y FileInfo : upload || update
-	public DirMessage(String op, int port, FileInfo file) { // Preguntar si se pueden actualizar varios ficheros al
-															// mismo tiempo o tienen que ser de uno en uno.
-		this.operation = op;
-		this.protocolId = null;
-		this.serverPort = port;
-		this.fileName = null;
-		this.files = null;
-		this.file = file;
-		this.servidores = new LinkedList<Integer>();
+		this.files = files;
+		this.servFich = new HashMap<InetSocketAddress, FileInfo>();
 	}
 
 	// Métodos de consulta -> getters
 	public String getOperation() {
 		return operation;
-	}
-
-	public FileInfo getFile() {
-		return file;
 	}
 
 	public String getFileName() {
@@ -164,8 +138,8 @@ public class DirMessage {
 		return serverPort;
 	}
 
-	public LinkedList<Integer> getServidores() {
-		return servidores;
+	public HashMap<InetSocketAddress, FileInfo> getServFich() {
+		return servFich;
 	}
 
 	/*
@@ -200,27 +174,32 @@ public class DirMessage {
 		this.fileName = fileName;
 	}
 
-	public void setFile(FileInfo file) {
-		if (!operation.equals(DirMessageOps.OPERATION_UPLOAD) || !operation.equals(DirMessageOps.OPERATION_UPDATE)) {
-			throw new RuntimeException("DirMessage: setFile called for message of unexpected type (" + operation + ")");
-		}
-		this.file = file;
-	}
-
 	public void setFiles(FileInfo[] files) {
-		if (!operation.equals(DirMessageOps.OPERATION_ASK_INFO_MULTIPLEOPTIONS)) {
+		if (!operation.equals(DirMessageOps.OPERATION_UPLOAD) || !operation.equals(DirMessageOps.OPERATION_UPDATE)
+				|| !operation.equals(DirMessageOps.OPERATION_SERVE)) {
 			throw new RuntimeException(
 					"DirMessage: setFiles called for message of unexpected type (" + operation + ")");
 		}
 		this.files = files;
 	}
 
-	public void setServidores(LinkedList<Integer> servidores) {
-		if (!operation.equals(DirMessageOps.OPERATION_AVAILABLE_FILES)) {
+	public void setAddFile(FileInfo file, int indice) {
+		if (!operation.equals(DirMessageOps.OPERATION_UPLOAD) || !operation.equals(DirMessageOps.OPERATION_UPDATE)
+				|| !operation.equals(DirMessageOps.OPERATION_SERVE)) {
+			throw new RuntimeException(
+					"DirMessage: setFiles called for message of unexpected type (" + operation + ")");
+		}
+		this.files[indice] = file;
+	}
+
+	public void setServidores(HashMap<InetSocketAddress, FileInfo> servidores) {
+		if (!operation.equals(DirMessageOps.OPERATION_AVAILABLE_FILES)
+				|| !operation.equals(DirMessageOps.OPERATION_ASK_INFO_MULTIPLEOPTIONS)
+				|| !operation.equals(DirMessageOps.OPERATION_ASK_INFO_OK)) {
 			throw new RuntimeException(
 					"DirMessage: setServidores called for message of unexpected type (" + operation + ")");
 		}
-		this.servidores = servidores;
+		this.servFich = new HashMap<InetSocketAddress, FileInfo>(servidores);
 	}
 
 	public String getProtocolId() {
@@ -237,7 +216,8 @@ public class DirMessage {
 	 * @return Un objeto PeerMessage que modela el mensaje recibido (tipo, valores,
 	 *         etc.)
 	 */
-	public static DirMessage fromString(String message) {
+	public static DirMessage fromString(String message) { // ORDEN : INFORMACIÓN FICHEROS (NOMBRE, HASH, TAMAÑO) ,
+															// ORDENACION PEER (PUERTO, IP);
 		/*
 		 * TODO: (Boletín MensajesASCII) Usar un bucle para parsear el mensaje línea a
 		 * línea, extrayendo para cada línea el nombre del campo y el valor, usando el
@@ -250,7 +230,21 @@ public class DirMessage {
 		// Local variables to save data during parsing
 		DirMessage m = null;
 
+		// Variables auxiliares
+		long size;
+		String name = "";
+		String hash = "";
+		int i = 0;
+		String auxIP;
+		int auxPort = 0;
+		HashMap<InetSocketAddress, FileInfo> auxMap = new HashMap<InetSocketAddress, FileInfo>();
+
 		for (String line : lines) {
+			if (line.contains(FIN_LISTA)) {
+				m.setServidores(auxMap);
+				continue; // Para pasar a la siguiente iteración
+			}
+
 			int idx = line.indexOf(DELIMITER); // Posición del delimitador
 			String fieldName = line.substring(0, idx).toLowerCase(); // minúsculas
 			String value = line.substring(idx + 1).trim();
@@ -261,7 +255,39 @@ public class DirMessage {
 				m = new DirMessage(value);
 				break;
 			}
-
+			case FIELDNAME_FICHNAME: {
+				m.setFileName(value);
+				name = value;
+				break;
+			}
+			case FIELDNAME_PROTOCOL: {
+				m.setProtocolID(value);
+				break;
+			}
+			case FIELDNAME_PORT: {
+				int port;
+				port = Integer.parseInt(value);
+				m.setServerPort(port);
+				auxPort = port;
+				break;
+			}
+			case FIELDNAME_FICHHASH: {
+				hash = value;
+				break;
+			}
+			case FIELDNAME_FICHSIZE: {
+				size = Long.parseLong(value);
+				FileInfo file = new FileInfo(hash, name, size);
+				m.setAddFile(file, i);
+				i++;
+				break;
+			}
+			case FIELDNAME_SERVER: {
+				auxIP = value;
+				InetSocketAddress a = new InetSocketAddress(auxIP, auxPort);
+				auxMap.put(a, m.getFiles()[i - 1]);
+				break;
+			}
 			default:
 				System.err.println("PANIC: DirMessage.fromString - message with unknown field name " + fieldName);
 				System.err.println("Message was:\n" + message);
@@ -291,44 +317,127 @@ public class DirMessage {
 
 		// Ireneee
 		switch (operation) {
-		case DirMessageOps.OPERATION_PING: {
-			sb.append(DirMessage.FIELDNAME_PROTOCOL + DELIMITER + this.protocolId + END_LINE); // ¿El 'this. ' es necesario?
+		case DirMessageOps.OPERATION_PING_OK: {
 			break;
 		}
-		case DirMessageOps.OPERATION_PING_OK:
-		case DirMessageOps.OPERATION_PING_DENIED :
-		case DirMessageOps.OPERATION_FILELIST :
-		case DirMessageOps.OPERATION_FILELIST_ERROR :
-		case DirMessageOps.OPERATION_SERVE_OK :
-		case DirMessageOps.OPERATION_SERVE_DENIED :
-		case DirMessageOps.OPERATION_ASK_INFO_FILENOTFOUND :
-		case DirMessageOps.OPERATION_UPLOAD_OK :
-		case DirMessageOps.OPERATION_UPLOAD_DUPLICATE : 
-		case DirMessageOps.OPERATION_UPDATE_OK :
-		case DirMessageOps.OPERATION_UPDATE_DENIED :
-		case DirMessageOps.OPERATION_UPDATE_FILENOTFOUND :
-		case DirMessageOps.OPERATION_QUIT :
-		case DirMessageOps.OPERATION_QUIT_OK : {
+		case DirMessageOps.OPERATION_PING_DENIED: {
+			break;
+		}
+		case DirMessageOps.OPERATION_FILELIST: {
+			break;
+		}
+		case DirMessageOps.OPERATION_FILELIST_ERROR: {
+			break;
+		}
+		case DirMessageOps.OPERATION_SERVE_OK: {
+			break;
+		}
+		case DirMessageOps.OPERATION_SERVE_DENIED: {
+			break;
+		}
+		case DirMessageOps.OPERATION_ASK_INFO_FILENOTFOUND: {
+			break;
+		}
+		case DirMessageOps.OPERATION_UPLOAD_OK: {
+			break;
+		}
+		case DirMessageOps.OPERATION_UPLOAD_DUPLICATE: {
+			break;
+		}
+		case DirMessageOps.OPERATION_UPDATE_OK: {
+			break;
+		}
+		case DirMessageOps.OPERATION_UPDATE_DENIED: {
+			break;
+		}
+		case DirMessageOps.OPERATION_UPDATE_FILENOTFOUND: {
+			break;
+		}
+		case DirMessageOps.OPERATION_QUIT: {
+			break;
+		}
+		case DirMessageOps.OPERATION_QUIT_OK: {
 			break; // No tiene más información
 		}
+		case DirMessageOps.OPERATION_PING: {
+			sb.append(DirMessage.FIELDNAME_PROTOCOL + DELIMITER + this.protocolId + END_LINE); // ¿El 'this. ' es
+																								// necesario?
+			break;
+		}
 		case DirMessageOps.OPERATION_AVAILABLE_FILES: {
-			sb.append(DirMessage.FIELDNAME_NFICHS + DELIMITER + this.files + END_LINE);
-			for(FileInfo f : this.files) {
+			for (InetSocketAddress i : servFich.keySet()) {
+				FileInfo f = servFich.get(i);
 				sb.append(DirMessage.FIELDNAME_FICHNAME + DELIMITER + f.getFileName() + END_LINE);
 				sb.append(DirMessage.FIELDNAME_FICHHASH + DELIMITER + f.getFileHash() + END_LINE);
 				sb.append(DirMessage.FIELDNAME_FICHSIZE + DELIMITER + f.getFileSize() + END_LINE);
-				for(int i = 0; i < this.servidores.size(); i++) {
-					sb.append(DirMessage.FIELDNAME_SERVER + DELIMITER + this.servidores.get(i) + END_LINE);
-				}
+
+				// ver si recorre todos los servidores o sólo el de la clave establecida
+				/*
+				 * String puertoIP = i.getPort() + " " + i.getAddress().getHostAddress(); if
+				 * (puertoIP.endsWith(",")) { puertoIP.substring(0, puertoIP.length() - 1); }
+				 */
+				sb.append(DirMessage.FIELDNAME_PORT + DELIMITER + i.getPort() + END_LINE);
+				sb.append(DirMessage.FIELDNAME_SERVER + DELIMITER + i.getAddress().getHostAddress() + END_LINE);
+
 			}
 			break;
 		}
-		
+		case DirMessageOps.OPERATION_SERVE: {
+			sb.append(DirMessage.FIELDNAME_PORT + DELIMITER + this.serverPort + END_LINE);
+			for (FileInfo f : this.files)
+				sb.append(DirMessage.FIELDNAME_FICHNAME + DELIMITER + f.getFileName() + END_LINE);
+			break;
+		}
+		case DirMessageOps.OPERATION_ASK_INFO: {
+			for (FileInfo f : this.files)
+				sb.append(DirMessage.FIELDNAME_FICHNAME + DELIMITER + f.getFileName() + END_LINE);
+			break;
+		}
+		case DirMessageOps.OPERATION_ASK_INFO_OK: {
+			for (FileInfo f : this.files) {
+				sb.append(DirMessage.FIELDNAME_FICHNAME + DELIMITER + f.getFileName() + END_LINE);
+				sb.append(DirMessage.FIELDNAME_FICHHASH + DELIMITER + f.getFileHash() + END_LINE);
+				sb.append(DirMessage.FIELDNAME_FICHSIZE + DELIMITER + f.getFileSize() + END_LINE);
 
+				// Lista de los ficheros
+				List<InetSocketAddress> claves = new LinkedList<>();
+				for(InetSocketAddress addr : this.getServFich().keySet()) {
+					if(this.getServFich().get(addr).getFileName().equals(f.getFileName()))
+						claves.add(addr);
+				}
+
+				// Imprimir todos los peer que los comparten
+				for (InetSocketAddress i : claves) {
+					sb.append(DirMessage.FIELDNAME_PORT + DELIMITER + i.getPort() + END_LINE);
+					sb.append(DirMessage.FIELDNAME_SERVER + DELIMITER + i.getAddress().getHostAddress() + END_LINE);
+				}
+			}
+
+			sb.append(DirMessage.FIN_LISTA + END_LINE);
+
+			break;
+		}
+		case DirMessageOps.OPERATION_ASK_INFO_MULTIPLEOPTIONS: {
+			for (FileInfo f : this.files) {
+				sb.append(DirMessage.FIELDNAME_FICHNAME + DELIMITER + f.getFileName() + END_LINE);
+				sb.append(DirMessage.FIELDNAME_FICHHASH + DELIMITER + f.getFileHash() + END_LINE);
+				sb.append(DirMessage.FIELDNAME_FICHSIZE + DELIMITER + f.getFileSize() + END_LINE);
+			}
+			break;
+		}
+		case DirMessageOps.OPERATION_UPLOAD: { // ¿ A qué se refiere con 'subir un fichero a otro servidor' ?
+			sb.append(DirMessage.FIELDNAME_PORT + DELIMITER + this.serverPort + END_LINE);
+			for (FileInfo f : this.files) { // Si es 1 -> recorrería una sola vez.
+				sb.append(DirMessage.FIELDNAME_FICHNAME + DELIMITER + f.getFileName() + END_LINE);
+				sb.append(DirMessage.FIELDNAME_FICHHASH + DELIMITER + f.getFileHash() + END_LINE);
+				sb.append(DirMessage.FIELDNAME_FICHSIZE + DELIMITER + f.getFileSize() + END_LINE);
+			}
+			break;
 		}
 
+		}
 		sb.append(END_LINE); // Marcamos el final del mensaje
 		return sb.toString();
-	}
 
+	}
 }

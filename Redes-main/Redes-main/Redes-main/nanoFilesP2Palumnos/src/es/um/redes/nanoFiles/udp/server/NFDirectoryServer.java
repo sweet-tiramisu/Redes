@@ -243,13 +243,13 @@ public class NFDirectoryServer {
 			
 			break;
 		} case DirMessageOps.OPERATION_FILELIST: {
-			FileInfo[] filelist = new FileInfo[files.size()];
+			FileInfo[] fileList = new FileInfo[files.size()];
 			int i = 0;
 			for(FileInfo f : files.values()) {
 				fileList[i] = f;
 				i++;
 			}
-			msgToSend.setFileList(fileList);
+			//msgToSend.setFileList(fileList);
 		}
 
 		default:
