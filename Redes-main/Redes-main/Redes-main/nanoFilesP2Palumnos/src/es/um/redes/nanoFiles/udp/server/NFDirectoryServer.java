@@ -206,12 +206,18 @@ public class NFDirectoryServer {
 		 * servidor.
 		 */
 		
+		String messageFromClient = new String(pkt.getData(), pkt.getOffset(), pkt.getLength());
+		System.out.println(messageFromClient);
+		
+		DirMessage dir = DirMessage.fromString(messageFromClient);
+		
+		
 		/*
 		 * TODO: Una vez construido un objeto DirMessage con el contenido del datagrama
 		 * recibido, obtener el tipo de operación solicitada por el mensaje y actuar en
 		 * consecuencia, enviando uno u otro tipo de mensaje en respuesta.
 		 */
-		String operation = DirMessageOps.OPERATION_INVALID; // TODO: Cambiar!
+		String operation = dir.getOperation(); // TODO: Cambiar!
 
 		/*
 		 * TODO: (Boletín MensajesASCII) Construir un objeto DirMessage (msgToSend) con
@@ -239,17 +245,31 @@ public class NFDirectoryServer {
 			 * procesar la petición recibida (éxito o fracaso) con los datos relevantes, a
 			 * modo de depuración en el servidor
 			 */
+			String protocolId = dir.getProtocolId();
+			String resultado;
+			if (protocolId.equals(NanoFiles.PROTOCOL_ID)) {
+				resultado = "pingOk";
+				System.out.println(resultado);
+			} else {
+				resultado = "pingDenied";
+				System.out.println(resultado + ": expected protocolId was " + NanoFiles.PROTOCOL_ID + " but protocolId received was " + protocolId);
+			}
 			
+			DirMessage msgToSend = new DirMessage(resultado);
+			byte[] responseData = msgToSend.toString().getBytes();
+			DatagramPacket responsePacket = new DatagramPacket(responseData, responseData.length, pkt.getAddress(), pkt.getPort());
+			this.socket.send(responsePacket);
 			
 			break;
 		} case DirMessageOps.OPERATION_FILELIST: {
-			FileInfo[] fileList = new FileInfo[files.size()];
-			int i = 0;
-			for(FileInfo f : files.values()) {
-				fileList[i] = f;
-				i++;
-			}
-			//msgToSend.setFileList(fileList);
+//			FileInfo[] fileList = new FileInfo[files.size()];
+//			int i = 0;
+//			for(FileInfo f : files.values()) {
+//				fileList[i] = f;
+//				i++;
+//			}
+//			msgToSend.setFileList(fileList);
+			break;
 		}
 
 		default:

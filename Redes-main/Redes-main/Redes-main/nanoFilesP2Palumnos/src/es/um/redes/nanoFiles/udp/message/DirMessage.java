@@ -261,6 +261,7 @@ public class DirMessage {
 				break;
 			}
 			case FIELDNAME_PROTOCOL: {
+				assert (m.operation.equals(DirMessageOps.OPERATION_PING));
 				m.setProtocolID(value);
 				break;
 			}
@@ -317,48 +318,6 @@ public class DirMessage {
 
 		// Ireneee
 		switch (operation) {
-		case DirMessageOps.OPERATION_PING_OK: {
-			break;
-		}
-		case DirMessageOps.OPERATION_PING_DENIED: {
-			break;
-		}
-		case DirMessageOps.OPERATION_FILELIST: {
-			break;
-		}
-		case DirMessageOps.OPERATION_FILELIST_ERROR: {
-			break;
-		}
-		case DirMessageOps.OPERATION_SERVE_OK: {
-			break;
-		}
-		case DirMessageOps.OPERATION_SERVE_DENIED: {
-			break;
-		}
-		case DirMessageOps.OPERATION_ASK_INFO_FILENOTFOUND: {
-			break;
-		}
-		case DirMessageOps.OPERATION_UPLOAD_OK: {
-			break;
-		}
-		case DirMessageOps.OPERATION_UPLOAD_DUPLICATE: {
-			break;
-		}
-		case DirMessageOps.OPERATION_UPDATE_OK: {
-			break;
-		}
-		case DirMessageOps.OPERATION_UPDATE_DENIED: {
-			break;
-		}
-		case DirMessageOps.OPERATION_UPDATE_FILENOTFOUND: {
-			break;
-		}
-		case DirMessageOps.OPERATION_QUIT: {
-			break;
-		}
-		case DirMessageOps.OPERATION_QUIT_OK: {
-			break; // No tiene más información
-		}
 		case DirMessageOps.OPERATION_PING: {
 			sb.append(DirMessage.FIELDNAME_PROTOCOL + DELIMITER + this.protocolId + END_LINE); // ¿El 'this. ' es
 																								// necesario?
@@ -401,8 +360,8 @@ public class DirMessage {
 
 				// Lista de los ficheros
 				List<InetSocketAddress> claves = new LinkedList<>();
-				for(InetSocketAddress addr : this.getServFich().keySet()) {
-					if(this.getServFich().get(addr).getFileName().equals(f.getFileName()))
+				for (InetSocketAddress addr : this.getServFich().keySet()) {
+					if (this.getServFich().get(addr).getFileName().equals(f.getFileName()))
 						claves.add(addr);
 				}
 
@@ -434,10 +393,8 @@ public class DirMessage {
 			}
 			break;
 		}
-
 		}
 		sb.append(END_LINE); // Marcamos el final del mensaje
 		return sb.toString();
-
 	}
 }
