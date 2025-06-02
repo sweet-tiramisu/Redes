@@ -7,6 +7,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 
 import es.um.redes.nanoFiles.application.NanoFiles;
 import es.um.redes.nanoFiles.udp.message.DirMessage;
@@ -26,19 +27,18 @@ public class NFDirectoryServer {
 	 * Socket de comunicación UDP con el cliente UDP (DirectoryConnector)
 	 */
 	private DatagramSocket socket = null;
-	
-	
+
 	/*
 	 * TODO: Añadir aquí como atributos las estructuras de datos que sean necesarias
 	 * para mantener en el directorio cualquier información necesaria para la
 	 * funcionalidad del sistema nanoFilesP2P: ficheros publicados, servidores
 	 * registrados, etc.
 	 */
-		
+
+	private HashMap<String, List<FileInfo>> filesList;
 	private HashMap<String, FileInfo> files;
 	
-	
-	
+
 	/**
 	 * Probabilidad de descartar un mensaje recibido en el directorio (para simular
 	 * enlace no confiable y testear el código de retransmisión)
@@ -60,16 +60,16 @@ public class NFDirectoryServer {
 		 * TODO: (Boletín SocketsUDP) Inicializar atributos que mantienen el estado del
 		 * servidor de directorio: ficheros, etc.)
 		 */
-		
+
 		files = new HashMap<String, FileInfo>();
 
 		// Irenee
 		this.socket = new DatagramSocket(DIRECTORY_PORT);
 
 		if (NanoFiles.testModeUDP && socket == null) {
-				System.err.println("[testMode] NFDirectoryServer: code not yet fully functional.\n"
-						+ "Check that all TODOs in its constructor and 'run' methods have been correctly addressed!");
-				System.exit(-1);
+			System.err.println("[testMode] NFDirectoryServer: code not yet fully functional.\n"
+					+ "Check that all TODOs in its constructor and 'run' methods have been correctly addressed!");
+			System.exit(-1);
 		}
 	}
 
@@ -84,17 +84,18 @@ public class NFDirectoryServer {
 		 */
 
 		// Irene
-		byte[] bufDatagram = new byte[MAX_BUF_SIZE_BYTES];	// El tamaño lo he definido yo, tal vez deberíamos de hacer referencia a una cte ya establecida.
+		byte[] bufDatagram = new byte[MAX_BUF_SIZE_BYTES]; // El tamaño lo he definido yo, tal vez deberíamos de hacer
+															// referencia a una cte ya establecida.
 		DatagramPacket datagramReceivedFromClient = new DatagramPacket(bufDatagram, bufDatagram.length);
 		socket.receive(datagramReceivedFromClient);
-		
+
 		// ya implementado
 		boolean datagramReceived = false;
 		while (!datagramReceived) {
 
 			if (datagramReceivedFromClient == null) {
 				System.err.println("[testMode] NFDirectoryServer.receiveDatagram: code not yet fully functional.\n"
-						+ "Check that all TODOs have been correctly addressed!");
+						+ "Check that all TODOs have been correctl<y addressed!");
 				System.exit(-1);
 			} else {
 				// Vemos si el mensaje debe ser ignorado (simulación de un canal no confiable)
@@ -146,32 +147,29 @@ public class NFDirectoryServer {
 		// Primer TODO
 		String messageFromClient = new String(pkt.getData(), pkt.getOffset(), pkt.getLength());
 		System.out.println("Data received: " + messageFromClient);
-		
+
 		// Segundo TODO
 		String response;
-		if(messageFromClient.startsWith("ping&"))
+		if (messageFromClient.startsWith("ping&"))
 			response = messageFromClient.equals("ping&".concat(NanoFiles.PROTOCOL_ID)) ? "welcome" : "denied";
 		else
 			response = messageFromClient.equals("ping") ? "pingok" : "invalid";
-		
-			
-		if(response.equals("invalid"))
+
+		if (response.equals("invalid"))
 			System.err.println("Invalid message recieved.");
 		else if (response.equals("denied"))
 			System.err.println("Message received denied.");
 		else
 			System.out.println("Response sent: " + response);
-		
+
 		// Se envía la respuesta
 		byte[] responseData = response.getBytes();
-		DatagramPacket responsePacket = new DatagramPacket(responseData, responseData.length, pkt.getAddress(), pkt.getPort());
+		DatagramPacket responsePacket = new DatagramPacket(responseData, responseData.length, pkt.getAddress(),
+				pkt.getPort());
 		this.socket.send(responsePacket);
-		
+
 	}
 
-	
-
-	
 	/*
 	 * TODO: (Boletín Estructura-NanoFiles) Ampliar el código para que, en el caso
 	 * de que la cadena recibida no sea exactamente "ping", comprobar si comienza
@@ -181,7 +179,6 @@ public class NFDirectoryServer {
 	 * recibida y comprobar que su valor coincide con el de NanoFiles.PROTOCOL_ID,
 	 * en cuyo caso se responderá con "welcome" (en otro caso, "denied").
 	 */
-
 
 	public void run() throws IOException {
 
@@ -205,13 +202,12 @@ public class NFDirectoryServer {
 		 * métodos "getter" para procesar el mensaje y consultar/modificar el estado del
 		 * servidor.
 		 */
-		
+
 		String messageFromClient = new String(pkt.getData(), pkt.getOffset(), pkt.getLength());
 		System.out.println(messageFromClient);
-		
+
 		DirMessage dir = DirMessage.fromString(messageFromClient);
-		
-		
+
 		/*
 		 * TODO: Una vez construido un objeto DirMessage con el contenido del datagrama
 		 * recibido, obtener el tipo de operación solicitada por el mensaje y actuar en
@@ -230,7 +226,7 @@ public class NFDirectoryServer {
 
 		switch (operation) {
 		case DirMessageOps.OPERATION_PING: {
-			
+
 			/*
 			 * TODO: (Boletín MensajesASCII) Comprobamos si el protocolId del mensaje del
 			 * cliente coincide con el nuestro.
@@ -252,16 +248,19 @@ public class NFDirectoryServer {
 				System.out.println(resultado);
 			} else {
 				resultado = "pingDenied";
-				System.out.println(resultado + ": expected protocolId was " + NanoFiles.PROTOCOL_ID + " but protocolId received was " + protocolId);
+				System.out.println(resultado + ": expected protocolId was " + NanoFiles.PROTOCOL_ID
+						+ " but protocolId received was " + protocolId);
 			}
-			
+
 			DirMessage msgToSend = new DirMessage(resultado);
 			byte[] responseData = msgToSend.toString().getBytes();
-			DatagramPacket responsePacket = new DatagramPacket(responseData, responseData.length, pkt.getAddress(), pkt.getPort());
+			DatagramPacket responsePacket = new DatagramPacket(responseData, responseData.length, pkt.getAddress(),
+					pkt.getPort());
 			this.socket.send(responsePacket);
-			
+
 			break;
-		} case DirMessageOps.OPERATION_FILELIST: {
+		}
+		case DirMessageOps.OPERATION_FILELIST: {
 //			FileInfo[] fileList = new FileInfo[files.size()];
 //			int i = 0;
 //			for(FileInfo f : files.values()) {

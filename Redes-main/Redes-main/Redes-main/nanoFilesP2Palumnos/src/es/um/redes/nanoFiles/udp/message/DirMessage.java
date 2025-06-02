@@ -66,7 +66,6 @@ public class DirMessage {
 	private String fileName;
 	private FileInfo[] files;
 	private HashMap<InetSocketAddress, FileInfo> servFich; // Para cada fichero, almacenamos su dir.IP + puerto.
-	// private LinkedList<Integer> servidores;
 
 	/*
 	 * TODO: (Boletín MensajesASCII) Crear diferentes constructores adecuados para
@@ -111,7 +110,7 @@ public class DirMessage {
 		this.servFich = new HashMap<InetSocketAddress, FileInfo>(servFich);
 	}
 
-	// Constructor para comandos con puerto : serve || upload || update
+	// Constructor para comandos con puerto : serve || upload 
 	public DirMessage(String op, int port, FileInfo[] files) {
 		this.operation = op;
 		this.protocolId = null;
@@ -175,8 +174,7 @@ public class DirMessage {
 	}
 
 	public void setFiles(FileInfo[] files) {
-		if (!operation.equals(DirMessageOps.OPERATION_UPLOAD) || !operation.equals(DirMessageOps.OPERATION_UPDATE)
-				|| !operation.equals(DirMessageOps.OPERATION_SERVE)) {
+		if (!operation.equals(DirMessageOps.OPERATION_UPLOAD) || !operation.equals(DirMessageOps.OPERATION_SERVE)) {
 			throw new RuntimeException(
 					"DirMessage: setFiles called for message of unexpected type (" + operation + ")");
 		}
@@ -184,8 +182,7 @@ public class DirMessage {
 	}
 
 	public void setAddFile(FileInfo file, int indice) {
-		if (!operation.equals(DirMessageOps.OPERATION_UPLOAD) || !operation.equals(DirMessageOps.OPERATION_UPDATE)
-				|| !operation.equals(DirMessageOps.OPERATION_SERVE)) {
+		if (!operation.equals(DirMessageOps.OPERATION_UPLOAD) || !operation.equals(DirMessageOps.OPERATION_SERVE)) {
 			throw new RuntimeException(
 					"DirMessage: setFiles called for message of unexpected type (" + operation + ")");
 		}
@@ -256,12 +253,13 @@ public class DirMessage {
 				break;
 			}
 			case FIELDNAME_FICHNAME: {
+				assert (m != null && (m.operation.equals(DirMessageOps.OPERATION_SERVE) || m.operation.equals(DirMessageOps.OPERATION_ASK_INFO) || m.operation.equals(DirMessageOps.OPERATION_ASK_INFO_MULTIPLEOPTIONS)));
 				m.setFileName(value);
 				name = value;
 				break;
 			}
 			case FIELDNAME_PROTOCOL: {
-				assert (m.operation.equals(DirMessageOps.OPERATION_PING));
+				assert (m != null && m.operation.equals(DirMessageOps.OPERATION_PING));
 				m.setProtocolID(value);
 				break;
 			}

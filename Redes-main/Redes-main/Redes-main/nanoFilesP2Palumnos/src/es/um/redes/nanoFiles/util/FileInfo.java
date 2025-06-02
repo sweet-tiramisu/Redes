@@ -1,6 +1,7 @@
 package es.um.redes.nanoFiles.util;
 
 import java.io.File;
+import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -19,19 +20,22 @@ public class FileInfo {
 	public String fileName;
 	public String filePath;
 	public long fileSize = -1;
+	//public InetSocketAddress IP;
 
-	public FileInfo(String hash, String name, long size, String path) {
+	public FileInfo(String hash, String name, long size, String path){//, InetSocketAddress IP) {
 		fileHash = hash;
 		fileName = name;
 		fileSize = size;
 		filePath = path;
+		//this.IP = IP;
 	}
 	// segundo constructor sin path
-	public FileInfo(String hash, String name, long size) {
+	public FileInfo(String hash, String name, long size){//, InetSocketAddress IP) {
 		fileHash = hash;
 		fileName = name;
 		fileSize = size;
 		filePath = null;
+		
 	}
 	
 	// Irene -> He incluido estos getters para poder acceder desde dirmessage.

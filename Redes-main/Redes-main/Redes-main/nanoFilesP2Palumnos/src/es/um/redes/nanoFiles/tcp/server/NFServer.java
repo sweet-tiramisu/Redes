@@ -56,8 +56,10 @@ public class NFServer implements Runnable {
 			 * implementar en el método serveFilesToClient, al cual hay que pasarle el
 			 * socket devuelto por accept.
 			 */
-
-
+			// IRENE -> TUTORÍA: BORRAR DESPUÉS
+	/*		public void () runserverBackground{
+					new Thead(this).start();
+			}*/
 
 		}
 	}

@@ -16,9 +16,7 @@ public class DirMessageOps {
 	public static final String OPERATION_SERVE = "serve";
 	public static final String OPERATION_ASK_INFO = "askinfo";
 	public static final String OPERATION_UPLOAD = "upload";
-	public static final String OPERATION_UPDATE = "update";
 	public static final String OPERATION_QUIT = "quit";
-	public static final String OPERATION_STOPSERVER = "stopserver";
 	
 	// RESPUESTAS
 	public static final String OPERATION_PING_OK = "pingok";
@@ -32,11 +30,7 @@ public class DirMessageOps {
 	public static final String OPERATION_ASK_INFO_FILENOTFOUND = "askinfofilenotfound";
 	public static final String OPERATION_UPLOAD_OK = "uploadok";
 	public static final String OPERATION_UPLOAD_DUPLICATE = "uploadduplicate";
-	public static final String OPERATION_UPDATE_OK = "updateok";
-	public static final String OPERATION_UPDATE_DENIED = "updatedenied";
-	public static final String OPERATION_UPDATE_FILENOTFOUND = "updatefilenotfound";
 	public static final String OPERATION_QUIT_OK = "quitok";
-	public static final String OPERATION_STOPSERVER_OK = "stopserverok";
 	
 	
 

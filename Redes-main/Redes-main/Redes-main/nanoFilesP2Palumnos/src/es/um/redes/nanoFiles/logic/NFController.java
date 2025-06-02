@@ -11,14 +11,15 @@ public class NFController {
 	/**
 	 * Diferentes estados del cliente de acuerdo con el autómata
 	 */
-	private static final byte OFFLINE = 0;
+	
 	/*
 	 * TODO: (Boletín Autómatas) Añadir más constantes que representen los estados
 	 * del autómata del cliente de directorio.
 	 */
-
-
-
+	private static final byte OFFLINE = 0;
+	private static final byte ONLINE = 0;
+	private static final byte IS_SERVER = 0;
+	
 
 	/**
 	 * Shell para leer comandos de usuario de la entrada estándar
